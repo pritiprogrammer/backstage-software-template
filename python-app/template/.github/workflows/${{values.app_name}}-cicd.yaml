@@ -37,19 +37,29 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
       - name: Modify values file
         shell: bash
         run: |
-          echo ${{ '${{needs.ci.outputs.commit_id}}' }}
+          echo "Commit ID: ${{ '${{needs.ci.outputs.commit_id}}' }}"
 
-          sudo curl -L https://github.com/mikefarah/yq/releases/latest/download/yq_linux_arm64 \
+          echo "Installing yq..."
+
+          sudo curl -L \
+            https://github.com/mikefarah/yq/releases/latest/download/yq_linux_arm64 \
             -o /usr/local/bin/yq
 
           sudo chmod +x /usr/local/bin/yq
 
-          yq -Yi '.image.tag = "${{'${{needs.ci.outputs.commit_id}}' }}"' charts/${{values.app_name}}/values-${{values.app_env}}.yaml
+          echo "Checking yq version..."
+          yq --version
+
+          echo "Updating image tag..."
+
+          yq -Yi '.image.tag = "${{'${{needs.ci.outputs.commit_id}}' }}"' \
+            charts/${{values.app_name}}/values-${{values.app_env}}.yaml
 
       - name: Commit changes
         uses: EndBug/add-and-commit@v9
@@ -59,13 +69,20 @@ jobs:
       - name: Install argocd
         shell: bash
         run: |
-          curl -ksSL -o argocd https://argocd-server.argocd/download/argocd-linux-arm64
+          echo "Installing Argo CD CLI..."
+
+          curl -ksSL \
+            -o argocd \
+            https://argocd-server.argocd/download/argocd-linux-arm64
 
           chmod +x argocd
 
           sudo mv ./argocd /usr/local/bin/argocd
 
-      - name: argocd login
+          echo "Checking Argo CD version..."
+          argocd version --client
+
+      - name: ArgoCD login
         shell: bash
         run: |
           argocd login argocd-server.argocd \
@@ -74,17 +91,17 @@ jobs:
             --username admin \
             --password ${{ '${{ secrets.ARGOCD_PASSWORD }}' }}
 
-      - name: Ensure argocd repo and app
+      - name: Ensure ArgoCD repo and app
         shell: bash
         run: |
-          # Connects the argocd repo
+          # Connects the ArgoCD repo
           repo="https://github.com/priti-devops-org/${{values.app_name}}.git"
 
-          argocd repo list | grep -q $repo || argocd repo add $repo
+          argocd repo list | grep -q "$repo" || argocd repo add "$repo"
 
-          # Creates the argocd app
+          # Creates the ArgoCD app
           argocd app get ${{values.app_name}} || argocd app create ${{values.app_name}} \
-            --repo $repo \
+            --repo "$repo" \
             --path charts/${{values.app_name}} \
             --dest-namespace ${{values.app_env}} \
             --dest-server https://kubernetes.default.svc \
@@ -93,7 +110,7 @@ jobs:
             --sync-policy manual \
             --sync-option CreateNamespace=true
 
-      - name: Argocd app sync
+      - name: ArgoCD app sync
         shell: bash
         run: |
           argocd app sync ${{values.app_name}}
