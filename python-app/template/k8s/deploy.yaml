@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
       - name: python-app
-        image: pritiprogrammer/python-app:v2
+        image: priti-devops-org/python-app:v2
         ports:
         - containerPort: 5000

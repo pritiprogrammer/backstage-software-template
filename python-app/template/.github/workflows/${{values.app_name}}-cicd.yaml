@@ -27,7 +27,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           push: true
-          tags: pritiprogrammer/${{values.app_name}}:${{ '${{ env.COMMIT_ID }}' }}
+          tags: priti081294/${{values.app_name}}:${{ '${{ env.COMMIT_ID }}' }}
     outputs:
       commit_id: ${{ '${{ env.COMMIT_ID }}' }}
 
@@ -71,7 +71,7 @@ jobs:
         run: |
 
           # Connects the argocd repo
-          repo="https://github.com/pritiprogrammer/${{values.app_name}}.git"
+          repo="https://github.com/priti-devops-org/${{values.app_name}}.git"
           argocd repo list | grep -q $repo || argocd repo add $repo
 
           # Creates the argocd app
