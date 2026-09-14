@@ -42,9 +42,18 @@ jobs:
         shell: bash
         run: |
           echo ${{ '${{needs.ci.outputs.commit_id}}' }}
-          pip install yq
-          yq -Yi '.image.tag = "${{'${{needs.ci.outputs.commit_id}}' }}"' charts/${{values.app_name}}/values-${{values.app_env}}.yaml
 
+          sudo curl -L \
+               https://github.com/mikefarah/yq/releases/latest/download/yq_linux_arm64 \
+                -o /usr/local/bin/yq
+
+          sudo chmod +x /usr/local/bin/yq
+
+          yq --version
+
+          yq -Yi '.image.tag = "${{'${{needs.ci.outputs.commit_id}}' }}"' \
+           charts/${{values.app_name}}/values-${{values.app_env}}.yaml
+           
       - name: Commit changes
         uses: EndBug/add-and-commit@v9
         with:
