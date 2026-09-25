@@ -110,10 +110,6 @@ jobs:
             --username admin \
             --password "${{'${{ secrets.ARGOCD_PASSWORD }}'}}"
 
-      - name: ArgoCD sync
-        shell: bash
-        run: |
-          argocd app sync ${{ values.app_name }}
       - name: Ensure argocd repo and app
         shell: bash
         run: |
