@@ -1,0 +1,117 @@
+
+name: ${{ values.app_name }}-cicd
+
+on:
+  push:
+    paths:
+      - src/**
+    branches:
+      - master
+
+jobs:
+
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Shorten commit id
+        shell: bash
+        run: |
+          echo "COMMIT_ID=${GITHUB_SHA::6}" >> "$GITHUB_ENV"
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ '${{ secrets.DOCKERHUB_USERNAME }}' }}
+          password: ${{ '${{ secrets.DOCKERHUB_TOKEN }}' }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: priti081294/${{ values.app_name }}:${{ '${{ env.COMMIT_ID }}' }}
+
+    outputs:
+      commit_id: ${{ env.COMMIT_ID }}
+
+
+  cd:
+    needs: ci
+    runs-on: self-hosted
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install yq
+        shell: bash
+        run: |
+          curl -L \
+            https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 \
+            -o yq
+
+          chmod +x yq
+          sudo mv yq /usr/local/bin/yq
+
+          yq --version
+
+
+      - name: Modify values file
+        shell: bash
+        run: |
+          echo "Commit ID: ${{ needs.ci.outputs.commit_id }}"
+
+          echo "Current directory:"
+          pwd
+
+          echo "Repository files:"
+          ls -la
+
+          echo "Checking chart:"
+          ls -la charts/${{ values.app_name }}/
+
+          echo "Current values.yaml:"
+          cat charts/${{ values.app_name }}/values-${{values.app_env}}.yaml
+
+          echo "yq version:"
+          yq --version
+
+          echo "Updating image tag:"
+          yq -i '.image.tag = "${{ needs.ci.outputs.commit_id }}"' charts/${{ values.app_name }}/values-${{values.app_env}}.yaml
+
+          echo "Updated values.yaml:"
+          cat charts/${{ values.app_name }}/values-${{values.app_env}}.yaml
+
+      - name: Commit changes
+        uses: EndBug/add-and-commit@v9
+        with:
+          message: "Updates values.yaml with commit ${{ needs.ci.outputs.commit_id }}"
+
+      - name: Install Argo CD
+        shell: bash
+        run: |
+          curl -sSL \
+            https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64 \
+            -o argocd
+
+          chmod +x argocd
+          sudo mv argocd /usr/local/bin/argocd
+
+          argocd version --client
+
+      - name: ArgoCD login
+        shell: bash
+        run: |
+          argocd login argocd-server.argocd \
+            --insecure \
+            --grpc-web \
+            --username admin \
+            --password "${{ secrets.ARGOCD_PASSWORD }}"
+
+      - name: ArgoCD sync
+        shell: bash
+        run: |
+          argocd app sync ${{ values.app_name }}
+
