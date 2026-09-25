@@ -44,6 +44,15 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Pull latest master
+        shell: bash
+        run: |
+          git checkout master
+          git pull --rebase origin master   
 
       - name: Install yq
         shell: bash
