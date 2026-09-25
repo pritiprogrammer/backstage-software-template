@@ -1,9 +1,11 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
+
 metadata:
   name: python-template
-  title: Python flask template
-  description: Provisions a minimalistic flask application
+  title: Python Flask Template
+  description: Provisions a minimalistic Flask application
+
 spec:
   owner: development
   type: service
@@ -14,12 +16,14 @@ spec:
         - component_id
         - environment
         - description
+
       properties:
         component_id:
           title: Component name
           type: string
           description: Provide a component (microservice) name
           pattern: '^([a-zA-Z][a-zA-Z0-9]*)(-[a-zA-Z0-9]+)*$'
+
         environment:
           title: Environment
           type: string
@@ -27,10 +31,11 @@ spec:
           enum:
             - dev
             - prod
+
         description:
-        title: Application Description
-        type: string
-        description: Describe what this application does   
+          title: Application Description
+          type: string
+          description: Describe what this application does
 
   steps:
     - id: fetch-base
@@ -39,17 +44,16 @@ spec:
       input:
         url: ./template
         values:
-          app_name: ${{parameters.component_id}}
-          app_env: ${{parameters.environment}}
+          app_name: ${{ parameters.component_id }}
+          app_env: ${{ parameters.environment }}
           app_description: ${{ parameters.description }}
-          # app_desc: ${{parameters.environment}}
 
     - id: publish
       name: Publish
       action: publish:github
       input:
         description: This is ${{ parameters.component_id }}
-        repoUrl: github.com?owner=pritiprogrammer&repo=${{parameters.component_id}}
+        repoUrl: github.com?owner=pritiprogrammer&repo=${{ parameters.component_id }}
         protectDefaultBranch: false
         repoVisibility: public
 
@@ -58,7 +62,7 @@ spec:
       action: catalog:register
       input:
         repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
-        catalogInfoPath: "/catalog-info.yaml"
+        catalogInfoPath: /catalog-info.yaml
 
   output:
     links:
