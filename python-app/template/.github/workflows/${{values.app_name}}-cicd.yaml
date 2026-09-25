@@ -88,8 +88,9 @@ jobs:
           yq --version
 
           echo "Updating image tag:"
-          yq -i '.image.tag = " ${{'${{ needs.ci.outputs.commit_id }}' }} " ' charts/${{ values.app_name }}/values-${{values.app_env}}.yaml
-
+          yq -i '.image.tag = "${{ '${{ needs.ci.outputs.commit_id }}' }}"' \
+          charts/${{ values.app_name }}/values-${{values.app_env}}.yaml
+          
           echo "Updated values.yaml:"
           cat charts/${{ values.app_name }}/values-${{values.app_env}}.yaml
 
