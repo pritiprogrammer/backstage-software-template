@@ -1,3 +1,4 @@
+
 name: ${{ values.app_name }}-cicd
 
 on:
@@ -40,6 +41,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install yq
+        shell: bash
+        run: |
+          ARCH=$(uname -m)
+
+          case "$ARCH" in
+            x86_64)
+              YQ_ARCH=amd64
+              ;;
+            aarch64|arm64)
+              YQ_ARCH=arm64
+              ;;
+            *)
+              echo "Unsupported architecture: $ARCH"
+              exit 1
+              ;;
+          esac
+
+          sudo curl -L -o /usr/local/bin/yq \
+            "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_${YQ_ARCH}"
+
+          sudo chmod +x /usr/local/bin/yq
+
+          yq --version
+
       - name: Modify values file
         shell: bash
         run: |
@@ -61,7 +87,27 @@ jobs:
         shell: bash
         run: |
           if ! command -v argocd >/dev/null 2>&1; then
-            brew install argocd
+            ARCH=$(uname -m)
+
+            case "$ARCH" in
+              x86_64)
+                ARGO_ARCH=amd64
+                ;;
+              aarch64|arm64)
+                ARGO_ARCH=arm64
+                ;;
+              *)
+                echo "Unsupported architecture: $ARCH"
+                exit 1
+                ;;
+            esac
+
+            curl -sSL -o argocd \
+              "https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-${ARGO_ARCH}"
+
+            chmod +x argocd
+
+            sudo mv argocd /usr/local/bin/argocd
           fi
 
           argocd version --client
