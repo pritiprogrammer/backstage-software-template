@@ -53,7 +53,7 @@ spec:
       action: publish:github
       input:
         description: This is ${{ parameters.component_id }}
-        repoUrl: github.com?owner=pritiprogrammer&repo=${{ parameters.component_id }}
+        repoUrl: github.com?owner=priti-devops-org-94&repo=${{ parameters.component_id }}
         defaultBranch: master
         protectDefaultBranch: false
         repoVisibility: public
